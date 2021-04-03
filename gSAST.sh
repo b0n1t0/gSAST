@@ -11,6 +11,7 @@ working_dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
 context=0
 pattern_dir="$working_dir/patterns"
+included_files=""
 excluded_dirs="--exclude-dir=.git --exclude-dir=node_modules"
 excluded_files="--exclude=*.txt --exclude=*.jpg --exclude=*.png --exclude=*.svg --exclude=*.ico"
 
@@ -31,8 +32,7 @@ printBanner(){
   /_____/        \/         \/        \/            
 
        Grep Static Analysis Security Tool v"$version"
-            by Gustavo Bonito (@gBon1to)
-	${reset}"
+            by Gustavo Bonito (@gBon1to)${reset}"
 }
 
 checkVersion(){
@@ -54,23 +54,23 @@ ${green}Usage: ./gSAST.sh [options] /path/\n${reset}"
 }
 
 checkLanguage(){
-case $lang in
-	"php")
-		pattern_dir="$working_dir/patterns/php"
-	;;
-	"javascript")
-		pattern_dir="$working_dir/patterns/javascript"
-	;;
-	"java")
-		pattern_dir="$working_dir/patterns/java"
-	;;
-	"python")
-		pattern_dir="$working_dir/patterns/python"
-	;;
-	"dotnet")
-		pattern_dir="$working_dir/patterns/dotnet"
-	;;
-esac
+	case $lang in
+		"php")
+			pattern_dir="$working_dir/patterns/php"
+		;;
+		"javascript")
+			pattern_dir="$working_dir/patterns/javascript"
+		;;
+		"java")
+			pattern_dir="$working_dir/patterns/java"
+		;;
+		"python")
+			pattern_dir="$working_dir/patterns/python"
+		;;
+		"dotnet")
+			pattern_dir="$working_dir/patterns/dotnet"
+		;;
+	esac
 }
 
 checkArgs(){
@@ -84,18 +84,20 @@ checkArgs(){
 				OIFS=$IFS
 	            IFS=','
 	            excluded_files=""
-	            for inc_pattern in "$OPTARG"; do
-	                included_files="--include=$inc_pattern"
+	            for inc_pattern in ${OPTARG[@]}; do
+	                included_files="$included_files --include=$inc_pattern"
 	            done
 	            IFS=$OIFS
+				set +f
 	        ;;
 			x)
 	            OIFS=$IFS
 	            IFS=','
-	            for exc_pattern in "$OPTARG"; do
+	            for exc_pattern in ${OPTARG[@]}; do
 	                excluded_files="$excluded_files --exclude=$exc_pattern"
 	            done
 	            IFS=$OIFS
+				set +f
 	        ;;
 			c)
 	            case_ins="-i"
@@ -121,11 +123,12 @@ checkArgs(){
 	fi
 }
 
+set -f
 checkRequirements
 printBanner
-checkArgs "$@"
+checkArgs $@
 for pattern_file in $pattern_dir/*.rules; do
-	if [[ -f "$pattern_file" && -s "$pattern_file" ]]; then
+	if [[ -f $pattern_file && -s $pattern_file ]]; then
 		echo -e "${blue}\n[*] Grepping with $pattern_file${reset}"
 		grep --no-group-separator \
 			--color=always \
@@ -133,8 +136,8 @@ for pattern_file in $pattern_dir/*.rules; do
 			$excluded_files \
 			$included_files \
 			$case_ins \
-			-n -R -H -C "$context" -E \
-			-f "$pattern_file" "${@: -1}"
+			-n -R -H -C $context -E \
+			-f $pattern_file ${@: -1} | sort -u
 	fi
 done
 exit $?

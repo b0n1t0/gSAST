@@ -1,3 +1,5 @@
 \"(SELECT|UPDATE|INSERT|DELETE)(.*)\"(.*)\.
 \->(query|exec)\(\s*\".*\".*\.
 query\((.*)\)
+query(.*)\.=
+sql(.*)\.=

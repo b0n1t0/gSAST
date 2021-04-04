@@ -6,5 +6,5 @@ MapGet\(
 MapPost\(
 HttpGet\(
 HttpPost\(
-QueryString(\[|\()
-ConnectionString
+QueryString\[
+connectionString=\"

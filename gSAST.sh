@@ -155,12 +155,12 @@ checkArgs $@ # Passes all arguments as a list
 # Loops all pattern files and uses them for searching (prevents file globbing issues)
 for pattern_file in $(find $pattern_dir -name "*.rules" 2>/dev/null); do
 	# Checks if pattern file exists and is not empty
-	if [[ -f $pattern_file && -s $pattern_file ]] && [[ -s $input ]]; then
+	if [[ -f $pattern_file && -s $pattern_file ]]; then
 		echo -e "${blue}\n[*] Grepping with $pattern_file${reset}"
 		# Searches the source code recursively (-R) and includes line numbers (-n) and filenames (-H) by default
 		grep --no-group-separator \
 			--color=always \
-			-n -R -H -C $context \
+			-H -R -n -a -C $context \
 			$excluded_dirs \
 			$excluded_files \
 			$included_files \

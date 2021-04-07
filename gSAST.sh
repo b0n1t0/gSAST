@@ -8,7 +8,7 @@ yellow="\033[1;33m"
 reset="\033[0m"
 
 version="1.1"
-# Sets "gSAST.sh" location as the working directory
+# Set "gSAST.sh" location as the working directory
 working_dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
 # Set default values
@@ -56,9 +56,11 @@ Options:
   -c Case in-sensitive grepping
   -n Number of lines to display
   -v Prints version
-  -h Prints help
+  -h Prints help menu
 
-${green}Usage: ./gSAST.sh [options] /path/\n${reset}"
+${green}Usage:
+  > gSAST.sh [options] /path/
+  > cat list.txt | gSAST.sh [options] /path/\n${reset}"
 }
 
 # Choose patterns to use based on the selected source code language
@@ -96,23 +98,23 @@ checkArgs(){
 				OIFS=$IFS
 	            IFS=',' # Pattern separator used
 	            excluded_files=""
+                inc_patterns="${OPTARG[@]}"
 				# Loops all inserted patterns and appends "--include=" to each pattern (ex. --include=*.php)
-	            for inc_pattern in ${OPTARG[@]}; do
+	            for inc_pattern in $inc_patterns; do
 	                included_files="$included_files --include=$inc_pattern"
 	            done
 	            IFS=$OIFS # Reverts the field separator to the default value
-				set +f # Enable file globbing
 	        ;;
 			x)
 				# Exclude files based on user patterns (ex. *.php,*.js)
 	            OIFS=$IFS
 	            IFS=',' # Pattern separator used
+                exc_patterns="${OPTARG[@]}"
 				# Loops all inserted patterns and appends "--exclude=" to each pattern (ex. --exclude=*.php)
-	            for exc_pattern in ${OPTARG[@]}; do
+	            for exc_pattern in $exc_patterns; do
 	                excluded_files="$excluded_files --exclude=$exc_pattern"
 	            done
 	            IFS=$OIFS # Reverts the field separator to the default value
-				set +f # Enable file globbing
 	        ;;
 			c)
 				# Uses "grep -i" for case-insensitive search
@@ -135,7 +137,7 @@ checkArgs(){
 	shift "$((OPTIND-1))" # Skip the options set by getopts (ex. -l)
 	
 	# Accept files or directories from stdin or as parameter
-	if [ $# -ge 1 ]; then
+	if [ $# -ge 1 ] && ! [ -z "$lang" ]; then
 		input="${@: -1}"
 	elif [[ -p /dev/stdin ]]; then
 		input="$(cat - )"
@@ -145,24 +147,25 @@ checkArgs(){
 	fi
 }
 
-set -f # Disables file globbing for looping "*.rules" files
+# set -x # Used for debugging
+set -f # Disables file globbing
 checkRequirements
 printBanner
 checkArgs $@ # Passes all arguments as a list
-# Loops all pattern files and uses them for searching
-for pattern_file in $pattern_dir/*.rules; do
+# Loops all pattern files and uses them for searching (prevents file globbing issues)
+for pattern_file in $(find $pattern_dir -name "*.rules" 2>/dev/null); do
 	# Checks if pattern file exists and is not empty
-	if [[ -f $pattern_file && -s $pattern_file ]]; then
+	if [[ -f $pattern_file && -s $pattern_file ]] && [[ -s $input ]]; then
 		echo -e "${blue}\n[*] Grepping with $pattern_file${reset}"
 		# Searches the source code recursively (-R) and includes line numbers (-n) and filenames (-H) by default
 		grep --no-group-separator \
 			--color=always \
+			-n -R -H -C $context \
 			$excluded_dirs \
 			$excluded_files \
 			$included_files \
 			$case_ins \
-			-n -R -H -C $context -E \
-			-f $pattern_file $input | sort -u # Print sorted distinct results
+			-E -f $pattern_file $input | sort -u # Prints sorted and unique results
 			# | awk -F  ":" '{print $1}' - Can be used to print only filenames
 	fi
 done

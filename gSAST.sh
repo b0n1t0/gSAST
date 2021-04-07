@@ -60,7 +60,7 @@ Options:
 
 ${green}Usage:
   > gSAST.sh [options] /path/
-  > cat list.txt | gSAST.sh [options] /path/\n${reset}"
+  > cat list.txt | gSAST.sh [options]\n${reset}"
 }
 
 # Choose patterns to use based on the selected source code language
